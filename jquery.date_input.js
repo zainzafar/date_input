@@ -179,7 +179,7 @@ DateInput.prototype = {
   
   // We should hide the date selector if a click event happens outside of it
   hideIfClickOutside: function(event) {
-	if ($(event.target).hasClass('date_input_image')) {
+	if ($(event.target).hasClass('date_input_trigger')) {
 		if ($(event.target).parent().find('.date_selector') == this.input.parent().find('.date_selector')) {
 			this.hide();
 		}
@@ -252,9 +252,11 @@ DateInput.prototype = {
   
   setPosition: function() {
     var offset = this.input.offset();
+	var topPosition = this.position != undefined ? this.position.top : offset.top + this.input.outerHeight();
+	var leftPosition = this.position != undefined ? this.position.left : offset.left;
     this.rootLayers.css({
-      top: 42,
-      left: 0
+      top: topPosition,
+      left: leftPosition
     });
     
     if (this.ieframe) {
