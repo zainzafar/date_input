@@ -1,20 +1,15 @@
 DateInput = (function($) { // Localise the $ function
 
 function DateInput(el, opts) {
+
 	$('.date_selector').hide();
-  if (typeof(opts) != "object") opts = {};
-  $.extend(this, DateInput.DEFAULT_OPTS, opts);
-  this.input = "target" in opts ? opts.target : $(el);
-  this.bindMethodsToObj("show", "hide", "hideIfClickOutside", "keydownHandler", "selectDate");
-  this.build();
-  this.selectDate();
-  opts.force_show == undefined ? this.hide() : this.show();
-};
-DateInput.DEFAULT_OPTS = {
-  month_names: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-  short_month_names: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  short_day_names: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  start_of_week: 1
+	if (typeof(opts) != "object") opts = {};
+	$.extend(this, opts);
+	this.input = "target" in opts ? opts.target : $(el);
+	this.bindMethodsToObj("show", "hide", "hideIfClickOutside", "keydownHandler", "selectDate");
+	this.build();
+	this.selectDate();
+	opts.force_show == undefined ? this.hide() : this.show();
 };
 DateInput.prototype = {
   build: function() {
@@ -165,7 +160,8 @@ DateInput.prototype = {
   show: function() {
     this.rootLayers.css("display", "block");
     $([window, document.body]).click(this.hideIfClickOutside);
-    this.input.unbind("focus", this.show);
+	this.input.unbind("focus", this.show);
+	if (this.source) this.source.unbind("click", this.show);
     $(document.body).keydown(this.keydownHandler);
     this.setPosition();
   },
@@ -174,6 +170,7 @@ DateInput.prototype = {
     this.rootLayers.css("display", "none");
     $([window, document.body]).unbind("click", this.hideIfClickOutside);
     this.input.focus(this.show);
+	if (this.source) this.source.click(this.show);
     $(document.body).unbind("keydown", this.keydownHandler);
   },
   
@@ -238,16 +235,49 @@ DateInput.prototype = {
   },
   
   stringToDate: function(string) {
-    var matches;
-    if (matches = string.match(/^(\d{1,2}) ([^\s]+) (\d{4,4})$/)) {
-      return new Date(matches[3], this.shortMonthNum(matches[2]), matches[1], 12, 00);
-    } else {
-      return null;
-    };
+	var matches;
+	if (this.default_format == 'dd mmm yyyy') {
+	    if (matches = string.match(/^(\d{1,2}) ([^\s]+) (\d{4,4})$/)) {
+	      return new Date(matches[3], this.shortMonthNum(matches[2]), matches[1], 12, 00);
+	    } else {
+	      return null;
+	    };
+	}
+	else if (this.default_format == 'mm-dd-yyyy') {
+		if (matches = string.match(/^(\d{2,2})-(\d{2,2})-(\d{4,4})$/)) {
+	      return new Date(matches[3], matches[1]-1, matches[2]);
+	    } else {
+	      return null;
+	    };
+	}
+	else if (this.default_format == 'dd-mm-yyyy') {
+		if (matches = string.match(/^(\d{2,2})-(\d{2,2})-(\d{4,4})$/)) {
+	      return new Date(matches[3], matches[2]-1, matches[1]);
+	    } else {
+	      return null;
+	    };
+	}
   },
   
   dateToString: function(date) {
-    return date.getDate() + " " + this.short_month_names[date.getMonth()] + " " + date.getFullYear();
+    if (this.default_format == 'dd mmm yyyy') {
+		return date.getDate() + " " + this.short_month_names[date.getMonth()] + " " + date.getFullYear();
+	}
+	else if (this.default_format == 'mm-dd-yyyy') {
+	  var month = (date.getMonth() + 1).toString();
+	  var dom = date.getDate().toString();
+	  if (month.length == 1) month = "0" + month;
+	  if (dom.length == 1) dom = "0" + dom;
+	  return month + "-" + dom + "-" + date.getFullYear();
+	}
+	else if (this.default_format == 'dd-mm-yyyy') {
+	  var month = (date.getMonth() + 1).toString();
+	  var dom = date.getDate().toString();
+	  if (month.length == 1) month = "0" + month;
+	  if (dom.length == 1) dom = "0" + dom;
+	  return dom + "-" + month + "-" + date.getFullYear();
+	}
+
   },
   
   setPosition: function() {
@@ -415,16 +445,19 @@ DateInput.prototype = {
 };
 
 $.fn.date_input = function(opts) {
-  return this.each(function() { new DateInput(this, opts); });
-};
-$.date_input = { 
-	initialize: function(opts) {
-  		$("input.date_input").date_input(opts);
-	},
-	force_show: function(opts) {
-		opts.target.date_input(opts);
-		opts.target.parent().find('.date_selector').show();
-	}
+	var conf = {
+	  month_names: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+	  short_month_names: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+	  short_day_names: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+	  start_of_week: 1,
+	  default_format: 'dd mmm yyyy',
+	  position: {
+		left: 0,
+	  	top: 42,
+	  }
+	};
+	$.extend(conf, opts, {'source': this});
+	return this.each(function() { new DateInput(this, conf); });
 };
 
 return DateInput;
