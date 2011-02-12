@@ -1,15 +1,14 @@
 DateInput = (function($) { // Localise the $ function
 
 function DateInput(el, opts) {
+	$('.date_selector').hide();
   if (typeof(opts) != "object") opts = {};
   $.extend(this, DateInput.DEFAULT_OPTS, opts);
-  
-  this.input = $(el);
+  this.input = "target" in opts ? opts.target : $(el);
   this.bindMethodsToObj("show", "hide", "hideIfClickOutside", "keydownHandler", "selectDate");
-  
   this.build();
   this.selectDate();
-  this.hide();
+  opts.force_show == undefined ? this.hide() : this.show();
 };
 DateInput.DEFAULT_OPTS = {
   month_names: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -19,46 +18,77 @@ DateInput.DEFAULT_OPTS = {
 };
 DateInput.prototype = {
   build: function() {
-    var monthNav = $('<p class="month_nav">' +
-      '<span class="button prev" title="[Page-Up]">&#171;</span>' +
-      ' <span class="month_name"></span> ' +
-      '<span class="button next" title="[Page-Down]">&#187;</span>' +
-      '</p>');
-    this.monthNameSpan = $(".month_name", monthNav);
-    $(".prev", monthNav).click(this.bindToObj(function() { this.moveMonthBy(-1); }));
-    $(".next", monthNav).click(this.bindToObj(function() { this.moveMonthBy(1); }));
+	if (this.input.parent().find('.date_selector').length == 0) {
+	    var monthNav = $('<p class="month_nav">' +
+	      '<span class="button prev" title="[Page-Up]">&#171;</span>' +
+	      ' <span class="month_name"></span> ' +
+	      '<span class="button next" title="[Page-Down]">&#187;</span>' +
+	      '</p>');
+	    this.monthNameSpan = $(".month_name", monthNav);
+	    $(".prev", monthNav).click(this.bindToObj(function() { this.moveMonthBy(-1); return false; }));
+	    $(".next", monthNav).click(this.bindToObj(function() { this.moveMonthBy(1); return false; }));
     
-    var yearNav = $('<p class="year_nav">' +
-      '<span class="button prev" title="[Ctrl+Page-Up]">&#171;</span>' +
-      ' <span class="year_name"></span> ' +
-      '<span class="button next" title="[Ctrl+Page-Down]">&#187;</span>' +
-      '</p>');
-    this.yearNameSpan = $(".year_name", yearNav);
-    $(".prev", yearNav).click(this.bindToObj(function() { this.moveMonthBy(-12); }));
-    $(".next", yearNav).click(this.bindToObj(function() { this.moveMonthBy(12); }));
+	    var yearNav = $('<p class="year_nav">' +
+	      '<span class="button prev" title="[Ctrl+Page-Up]">&#171;</span>' +
+	      ' <span class="year_name"></span> ' +
+	      '<span class="button next" title="[Ctrl+Page-Down]">&#187;</span>' +
+	      '</p>');
+	    this.yearNameSpan = $(".year_name", yearNav);
+	    $(".prev", yearNav).click(this.bindToObj(function() { this.moveMonthBy(-12); return false; }));
+	    $(".next", yearNav).click(this.bindToObj(function() { this.moveMonthBy(12); return false; }));
     
-    var nav = $('<div class="nav"></div>').append(monthNav, yearNav);
+	    var nav = $('<div class="nav"></div>').append(monthNav, yearNav);
     
-    var tableShell = "<table><thead><tr>";
-    $(this.adjustDays(this.short_day_names)).each(function() {
-      tableShell += "<th>" + this + "</th>";
-    });
-    tableShell += "</tr></thead><tbody></tbody></table>";
+	    var tableShell = "<table><thead><tr>";
+	    $(this.adjustDays(this.short_day_names)).each(function() {
+	      tableShell += "<th>" + this + "</th>";
+	    });
+	    tableShell += "</tr></thead><tbody></tbody></table>";
     
-    this.dateSelector = this.rootLayers = $('<div class="date_selector"></div>').append(nav, tableShell).insertAfter(this.input);
+	    this.dateSelector = this.rootLayers = $('<div class="date_selector"></div>').append(nav, tableShell).insertAfter(this.input);
     
-    if ($.browser.msie && $.browser.version < 7) {
-      // The ieframe is a hack which works around an IE <= 6 bug where absolutely positioned elements
-      // appear behind select boxes. Putting an iframe over the top of the select box prevents this.
-      this.ieframe = $('<iframe class="date_selector_ieframe" frameborder="0" src="#"></iframe>').insertBefore(this.dateSelector);
-      this.rootLayers = this.rootLayers.add(this.ieframe);
+	    if ($.browser.msie && $.browser.version < 7) {
+	      // The ieframe is a hack which works around an IE <= 6 bug where absolutely positioned elements
+	      // appear behind select boxes. Putting an iframe over the top of the select box prevents this.
+	      this.ieframe = $('<iframe class="date_selector_ieframe" frameborder="0" src="#"></iframe>').insertBefore(this.dateSelector);
+	      this.rootLayers = this.rootLayers.add(this.ieframe);
       
-      // IE 6 only does :hover on A elements
-      $(".button", nav).mouseover(function() { $(this).addClass("hover") });
-      $(".button", nav).mouseout(function() { $(this).removeClass("hover") });
-    };
+	      // IE 6 only does :hover on A elements
+	      $(".button", nav).mouseover(function() { $(this).addClass("hover") });
+	      $(".button", nav).mouseout(function() { $(this).removeClass("hover") });
+	    };
+	    this.tbody = $("tbody", this.dateSelector);	
+    }
+	else {
+		var div_selector = this.input.parent().find('.date_selector');
+	    var monthNav = div_selector.find(".month_nav");
+	    this.monthNameSpan = $(".month_name", monthNav);
+	    $(".prev", monthNav).click(this.bindToObj(function() { this.moveMonthBy(-1); return false; }));
+	    $(".next", monthNav).click(this.bindToObj(function() { this.moveMonthBy(1); return false; }));
     
-    this.tbody = $("tbody", this.dateSelector);
+	    var yearNav = div_selector.find(".year_nav");
+	    this.yearNameSpan = $(".year_name", yearNav);
+	    $(".prev", yearNav).click(this.bindToObj(function() { this.moveMonthBy(-12); return false; }));
+	    $(".next", yearNav).click(this.bindToObj(function() { this.moveMonthBy(12); return false; }));
+    
+	    var nav = div_selector.find("nav");
+    
+	    var tableShell = div_selector.find("table");    
+
+	    this.dateSelector = this.rootLayers = div_selector;
+    
+	    if ($.browser.msie && $.browser.version < 7) {
+	      // The ieframe is a hack which works around an IE <= 6 bug where absolutely positioned elements
+	      // appear behind select boxes. Putting an iframe over the top of the select box prevents this.
+	      this.ieframe = div_selector.find("date_selector_ieframe");
+//	      this.rootLayers = this.rootLayers.add(this.ieframe);
+      
+	      // IE 6 only does :hover on A elements
+	      $(".button", nav).mouseover(function() { $(this).addClass("hover") });
+	      $(".button", nav).mouseout(function() { $(this).removeClass("hover") });
+	    };
+	    this.tbody = $("tbody", div_selector);
+	}
     
     this.input.change(this.bindToObj(function() { this.selectDate(); }));
     this.selectDate();
@@ -149,7 +179,12 @@ DateInput.prototype = {
   
   // We should hide the date selector if a click event happens outside of it
   hideIfClickOutside: function(event) {
-    if (event.target != this.input[0] && !this.insideSelector(event)) {
+	if ($(event.target).hasClass('date_input_image')) {
+		if ($(event.target).parent().find('.date_selector') == this.input.parent().find('.date_selector')) {
+			this.hide();
+		}
+	}
+	else if (event.target != this.input[0] && !$(event.target).hasClass('date_selector')) {
       this.hide();
     };
   },
@@ -218,8 +253,8 @@ DateInput.prototype = {
   setPosition: function() {
     var offset = this.input.offset();
     this.rootLayers.css({
-      top: offset.top + this.input.outerHeight(),
-      left: offset.left
+      top: 42,
+      left: 0
     });
     
     if (this.ieframe) {
@@ -380,9 +415,15 @@ DateInput.prototype = {
 $.fn.date_input = function(opts) {
   return this.each(function() { new DateInput(this, opts); });
 };
-$.date_input = { initialize: function(opts) {
-  $("input.date_input").date_input(opts);
-} };
+$.date_input = { 
+	initialize: function(opts) {
+  		$("input.date_input").date_input(opts);
+	},
+	force_show: function(opts) {
+		opts.target.date_input(opts);
+		opts.target.parent().find('.date_selector').show();
+	}
+};
 
 return DateInput;
 })(jQuery); // End localisation of the $ function
