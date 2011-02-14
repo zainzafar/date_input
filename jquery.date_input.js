@@ -450,11 +450,7 @@ $.fn.date_input = function(opts) {
 	  short_month_names: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 	  short_day_names: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	  start_of_week: 1,
-	  default_format: 'dd mmm yyyy',
-	  position: {
-		left: 0,
-	  	top: 42,
-	  }
+	  default_format: 'dd mmm yyyy'
 	};
 	$.extend(conf, opts, {'source': this});
 	return this.each(function() { new DateInput(this, conf); });
